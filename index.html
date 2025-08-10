@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Encryption</title>
+    <!-- Include necessary libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/jimp"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cli-alerts/0.2.3/cli-alerts.min.js"></script>
+</head>
+<body>
+    <h1>Image Encryption</h1>
+    <input id="encryptImage" type="file" accept=".png, .jpg, .jpeg"><br><br>
+    <label for="outputImageFileName">Output Encrypted Image Name:</label>
+    <input type="text" id="outputImageFileName"><br><br>
+    <label for="outputKeyFileName">Output Key File Name:</label>
+    <input type="text" id="outputKeyFileName"><br><br>
+    <button onclick="encrypt()">Encrypt Image</button>
+
+    <script>
+        async function encrypt() {
+            const encryptImageInput = document.getElementById("encryptImage");
+            const outputImageFileName = document.getElementById("outputImageFileName").value.trim();
+            const outputKeyFileName = document.getElementById("outputKeyFileName").value.trim();
+            
+            const encryptImage = encryptImageInput.files[0];
+            if (!encryptImage) {
+                showAlert('warning', 'Invalid Input', 'Please select an image to encrypt.');
+                return;
+            }
+
+            if (!outputImageFileName || !outputKeyFileName) {
+                showAlert('warning', 'Invalid Input', 'Please fill in all fields.');
+                return;
+            }
+
+            try {
+                const image = await Jimp.read(await toDataURL(encryptImage));
+                const extension = image.getExtension();
+                const fileNameWithoutExtension = encryptImage.name.split('.')[0];
+                
+                if (extension === 'jpeg' || extension === 'jpg') {
+                    if (!confirm('The image you are trying to encrypt is a jpeg/jpg. Some information may be lost while encryption/decryption. Do you want to proceed?')) {
+                        return;
+                    }
+                }
+
+                const outputImageFile = `${fileNameWithoutExtension}_encrypted.${extension}`;
+                const outputKeyFile = `${fileNameWithoutExtension}_key.txt`;
+
+                // Example of encryption logic
+                // Here, you need to implement your encryption algorithm
+                // This is just a placeholder
+                const key = Array.from({ length: 50 }, () => Math.floor(Math.random() * 256));
+                const encryptedData = await encryptData(image.bitmap.data, key);
+
+                // Example of saving encrypted image and key
+                // Here, you need to implement the saving logic
+                // This is just a placeholder
+                // You may use FileSaver.js library to download files in the browser
+                const blob = new Blob([encryptedData]);
+                saveAs(blob, outputImageFile);
+                saveAs(new Blob([key.join(',')]), outputKeyFile);
+
+                showAlert('success', 'Image Encrypted Successfully', `Encrypted Image: ${outputImageFile}<br>Key: ${outputKeyFile}`);
+            } catch (error) {
+                console.error(error);
+                showAlert('error', 'Encryption Failed', 'An error occurred during encryption.');
+            }
+        }
+
+        // Placeholder function for encrypting data
+        // Replace this with your encryption algorithm
+        async function encryptData(data, key) {
+            return data.map((pixel, index) => pixel ^ key[index % key.length]);
+        }
+
+        // Function to display alerts using cli-alerts library
+        function showAlert(type, title, message) {
+            if (type === 'error') {
+                alert({ type: 'fail', msg: `${title}\n${message}` });
+            } else if (type === 'success') {
+                alert({ type: 'success', msg: `${title}\n${message}` });
+            } else {
+                alert({ type: 'warning', msg: `${title}\n${message}` });
+            }
+        }
+
+        // Function to convert image file to data URL
+        function toDataURL(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
+    </script>
+</body>
+</html>
